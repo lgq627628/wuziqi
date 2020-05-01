@@ -21,7 +21,7 @@ export default class Chess extends cc.Component {
     }
 
     onTouchStart() {
-      this.home.putChess(this.chessData.i, this.chessData.j)
+      this.home.sendPutMsg(this.chessData.i, this.chessData.j)
 
     }
     updateState() {
@@ -42,6 +42,6 @@ export class ChessData {
 
 export enum ChessType {
   None,
-  White,
-  Black
+  Black,
+  White
 }

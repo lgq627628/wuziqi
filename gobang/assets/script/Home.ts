@@ -1,6 +1,10 @@
-import Config from "./Config";
+import Config from "./common/Config";
 import Chess, { ChessData, ChessType } from "./Chess";
 import Player from "./Player";
+import EventCenter from "./common/EventCenter";
+import EventName from "./common/EventName";
+import WS from "./common/WS";
+import { PutMessage, MatchMessage } from "./common/Message";
 
 const {ccclass, property} = cc._decorator;
 
@@ -11,6 +15,8 @@ export default class Home extends cc.Component {
     chessWrap: cc.Node = null;
     @property(cc.Prefab)
     chessPrefab: cc.Prefab = null;
+    @property(cc.Label)
+    tip: cc.Label = null;
 
     chessArr: Chess[][] = []
     chessDataArr: ChessData[][] = []
@@ -23,25 +29,31 @@ export default class Home extends cc.Component {
 
     onLoad () {
       this.genChessPanel()
-      this.genTwoPlayer()
+      EventCenter.on(EventName.EVENT_MATCH_OK, this.onMatchOK, this)
+      EventCenter.on(EventName.EVENT_PUT, this.onPutMsg, this)
     }
 
-    genTwoPlayer() {
+    onMatchOK(msg: MatchMessage) {
+      console.log('匹配成功')
+      let {myUid, otherUid, myChessType} = msg
       let p1 = new Player()
-      p1.uid = 1
-      p1.type = ChessType.Black
+      p1.uid = myUid
+      p1.name = '我'
+      p1.type = myChessType
       this.p1 = p1
 
       let p2 = new Player()
-      p2.uid = 1
-      p2.type = ChessType.White
+      p2.uid = otherUid
+      p2.name = '对手'
+      p2.type = myChessType === ChessType.White ? ChessType.Black : ChessType.White
       this.p2 = p2
 
-      this.curPlayer = p1
+      this.curPlayer = myChessType === ChessType.Black ? this.p1 : this.p2
+      this.updateRoundTip()
     }
 
-    turnPlayer() {
-      if (this.curPlayer === this.p1) {
+    turnPlayer(uid: number) {
+      if (this.p1.uid === uid) {
         this.curPlayer = this.p2
       } else {
         this.curPlayer = this.p1
@@ -70,10 +82,34 @@ export default class Home extends cc.Component {
       }
     }
 
-    putChess(i: number, j: number) {
+    sendPutMsg(i: number, j: number) {
+      if (!this.curPlayer) return
       if (this.chessDataArr[i][j].type !== ChessType.None) return
 
-      this.chessDataArr[i][j].type = this.curPlayer.type
+      // 如果当前落子的是自己，则发送消息到服务端告知
+      if (this.curPlayer === this.p1) {
+        let msg = new PutMessage(this.curPlayer.uid, i, j)
+        WS.getInstance().send(msg)
+      }
+      this.curPlayer = null
+    }
+
+    onPutMsg(msg: PutMessage) {
+      let {uid, i, j} = msg
+      let player = this.getPlayer(uid)
+
+      this.putChess(player.type, i, j)
+      this.checkWin(i, j, player.type) && this.scheduleOnce(() => {alert('win')}, 0)
+      this.turnPlayer(uid)
+      this.updateRoundTip()
+    }
+
+    getPlayer(uid) {
+      return this.p1.uid === uid ? this.p1 : this.p2
+    }
+
+    putChess(type: ChessType, i: number, j: number) {
+      this.chessDataArr[i][j].type = type
       this.chessDataArr[i][j].isLastedChess = true
       this.chessArr[i][j].updateState()
 
@@ -83,12 +119,6 @@ export default class Home extends cc.Component {
       }
 
       this.lastedChess = this.chessArr[i][j]
-
-      if (this.checkWin(i, j, this.curPlayer.type)) {
-        this.scheduleOnce(() => {alert('win')}, 0)
-
-      }
-      this.turnPlayer()
     }
 
     checkWin(i: number, j: number, type: ChessType): boolean {
@@ -178,5 +208,9 @@ export default class Home extends cc.Component {
         }
       }
       return num >= 5
+    }
+
+    updateRoundTip() {
+      this.tip.string = `轮到 ${this.curPlayer === this.p1 ? this.p1.name : this.p2.name} 落子啦`
     }
 }
