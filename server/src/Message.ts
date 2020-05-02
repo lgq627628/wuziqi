@@ -51,3 +51,15 @@ export class MessageC2S_Regist extends MessageC2S {
 export class MessageS2C_Regist extends MessageS2C {
   type: MessageType = MessageType.S2C_Regist
 }
+
+export class MessageC2S_Login extends MessageC2S {
+  type: MessageType = MessageType.C2S_Login
+  constructor(public username: string, public password: string) {
+    super()
+  }
+}
+
+export class MessageS2C_Login extends MessageS2C {
+  type: MessageType = MessageType.S2C_Login
+  uid: string
+}

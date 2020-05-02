@@ -22,8 +22,8 @@ export default class WS extends cc.Component {
       // let url = 'ws://192.168.1.102:7777'
       let ws = new WebSocket(url)
       ws.onopen = (e: MessageEvent) => {
-        console.log('客户端开始连接 ws 服务端发', {type: 1})
-        ws.send(JSON.stringify({type: 1}))
+        console.log('客户端开始连接 ws 服务端')
+        // ws.send(JSON.stringify({type: 1}))
         EventCenter.emit(EventName.EVENT_CONNECT_OK)
       }
       ws.onmessage = (e: MessageEvent) => {
@@ -38,6 +38,9 @@ export default class WS extends cc.Component {
             EventCenter.emit(EventName.EVENT_PUT, msg)
             break
           case MessageType.S2C_Regist:
+            EventCenter.emit(msg.type.toString(), msg)
+            break
+          case MessageType.S2C_Login:
             EventCenter.emit(msg.type.toString(), msg)
             break
         }
