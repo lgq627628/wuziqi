@@ -3,7 +3,6 @@ export default class Message {
 }
 
 export enum MessageType {
-  Hello,
   Match,
   S2C_MatchOK,
   C2S_Put,
