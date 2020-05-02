@@ -1,5 +1,5 @@
 import WebSocket from 'ws'
-import uuid from 'uuid'
+import {v1} from 'uuid'
 import Message, { MessageType, MessageC2S_Regist, MessageS2C_Regist } from './Message'
 import ClientMgr from './ClientMgr'
 import DBMgr from './DBMgr'
@@ -42,7 +42,7 @@ export default class Client {
             data.code = -1
             this.send(data)
           } else {
-            let uid = uuid.v1() // v1 指的是根据网卡的 Mac 地址和时间戳返回一个字符串
+            let uid = v1() // v1 指的是根据网卡的 Mac 地址和时间戳返回一个字符串
             let password = Md5.hashStr(regist.password)
             let doc = {uid, username, password}
             console.log('当前注册用户信息', doc)

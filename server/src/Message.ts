@@ -49,4 +49,5 @@ export class MessageC2S_Regist extends MessageC2S {
 }
 
 export class MessageS2C_Regist extends MessageS2C {
+  type: MessageType = MessageType.S2C_Regist
 }
