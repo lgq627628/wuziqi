@@ -25,8 +25,8 @@ export default class Chess extends cc.Component {
 
     }
     updateState() {
-      this.blackChess.active = this.chessData.type === ChessType.Black
-      this.whiteChess.active = this.chessData.type === ChessType.White
+      this.blackChess.active = this.chessData.chessType === ChessType.Black
+      this.whiteChess.active = this.chessData.chessType === ChessType.White
       this.redPoint.active = this.chessData.isLastedChess
     }
 
@@ -34,7 +34,7 @@ export default class Chess extends cc.Component {
 }
 
 export class ChessData {
-  type: ChessType = ChessType.None
+  chessType: ChessType = ChessType.None
   i: number
   j: number
   isLastedChess: boolean = false

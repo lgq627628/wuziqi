@@ -4,7 +4,7 @@ import Player from "./Player";
 import EventCenter from "./common/EventCenter";
 import EventName from "./common/EventName";
 import WS from "./common/WS";
-import { PutMessage, MatchMessage } from "./common/Message";
+import { PutMessage, MessageS2C_Match, MessageS2C_Login, ISyncData } from "./common/Message";
 
 const {ccclass, property} = cc._decorator;
 
@@ -31,28 +31,41 @@ export default class Home extends cc.Component {
       this.genChessPanel()
       EventCenter.on(EventName.EVENT_MATCH_OK, this.onMatchOK, this)
       EventCenter.on(EventName.EVENT_PUT, this.onPutMsg, this)
+      EventCenter.on(EventName.EVENT_CONTINUE_GAME, this.onContinueGame, this)
     }
 
-    onMatchOK(msg: MatchMessage) {
+    onContinueGame(msg: MessageS2C_Login) {
+      this.onMatchOK(msg.sync)
+      this.chessDataArr = msg.sync.panelData
+      this.refreshAllChess(chessData => {
+        if (chessData.isLastedChess) {
+          this.lastedChess = this.chessArr[chessData.i][chessData.j]
+          this.curPlayer = this.p1.chessType === chessData.chessType ? this.p2 : this.p1
+          this.updateRoundTip()
+        }
+      })
+    }
+
+    onMatchOK(msg: ISyncData) {
       console.log('匹配成功')
       let {myUid, otherUid, myChessType} = msg
       let p1 = new Player()
       p1.uid = myUid
       p1.name = '我'
-      p1.type = myChessType
+      p1.chessType = myChessType
       this.p1 = p1
 
       let p2 = new Player()
       p2.uid = otherUid
       p2.name = '对手'
-      p2.type = myChessType === ChessType.White ? ChessType.Black : ChessType.White
+      p2.chessType = myChessType === ChessType.White ? ChessType.Black : ChessType.White
       this.p2 = p2
 
       this.curPlayer = myChessType === ChessType.Black ? this.p1 : this.p2
       this.updateRoundTip()
     }
 
-    turnPlayer(uid: number) {
+    turnPlayer(uid: string) {
       if (this.p1.uid === uid) {
         this.curPlayer = this.p2
       } else {
@@ -84,11 +97,11 @@ export default class Home extends cc.Component {
 
     sendPutMsg(i: number, j: number) {
       if (!this.curPlayer) return
-      if (this.chessDataArr[i][j].type !== ChessType.None) return
+      if (this.chessDataArr[i][j].chessType !== ChessType.None) return
 
       // 如果当前落子的是自己，则发送消息到服务端告知
       if (this.curPlayer === this.p1) {
-        let msg = new PutMessage(this.curPlayer.uid, i, j)
+        let msg = new PutMessage(this.curPlayer.uid, i, j, this.curPlayer.chessType)
         WS.getInstance().send(msg)
       }
       this.curPlayer = null
@@ -98,18 +111,28 @@ export default class Home extends cc.Component {
       let {uid, i, j} = msg
       let player = this.getPlayer(uid)
 
-      this.putChess(player.type, i, j)
-      this.checkWin(i, j, player.type) && this.scheduleOnce(() => {alert('win')}, 0)
+      this.putChess(player.chessType, i, j)
+      this.checkWin(i, j, player.chessType) && this.scheduleOnce(() => {alert('win')}, 0)
       this.turnPlayer(uid)
       this.updateRoundTip()
     }
 
-    getPlayer(uid) {
+    getPlayer(uid: string) {
       return this.p1.uid === uid ? this.p1 : this.p2
     }
 
-    putChess(type: ChessType, i: number, j: number) {
-      this.chessDataArr[i][j].type = type
+    refreshAllChess(cb?: (chessData: ChessData) => void) {
+      for (let i = 0; i < Config.ROW_COUNT; i++) {
+        for (let j = 0; j < Config.COL_COUNT; j++) {
+          this.chessArr[i][j].chessData = this.chessDataArr[i][j]
+          this.chessArr[i][j].updateState()
+          cb && cb(this.chessDataArr[i][j])
+        }
+      }
+    }
+
+    putChess(chessType: ChessType, i: number, j: number) {
+      this.chessDataArr[i][j].chessType = chessType
       this.chessDataArr[i][j].isLastedChess = true
       this.chessArr[i][j].updateState()
 
@@ -121,15 +144,15 @@ export default class Home extends cc.Component {
       this.lastedChess = this.chessArr[i][j]
     }
 
-    checkWin(i: number, j: number, type: ChessType): boolean {
-      let rs = this.checkH(i, j, type) || this.checkV(i, j, type) || this.checkO1(i, j, type) || this.checkO2(i, j, type)
+    checkWin(i: number, j: number, chessType: ChessType): boolean {
+      let rs = this.checkH(i, j, chessType) || this.checkV(i, j, chessType) || this.checkO1(i, j, chessType) || this.checkO2(i, j, chessType)
       return rs
     }
-    checkH(i: number, j: number, type: ChessType): boolean {
+    checkH(i: number, j: number, chessType: ChessType): boolean {
       let num = 1
       let temp = j
       while(--temp > 0) {
-        if (this.chessDataArr[i][temp].type === type) {
+        if (this.chessDataArr[i][temp].chessType === chessType) {
           num++
         } else {
           break
@@ -137,7 +160,7 @@ export default class Home extends cc.Component {
       }
       temp = j
       while(++temp < Config.COL_COUNT) {
-        if (this.chessDataArr[i][temp].type === type) {
+        if (this.chessDataArr[i][temp].chessType === chessType) {
           num++
         } else {
           break
@@ -145,11 +168,11 @@ export default class Home extends cc.Component {
       }
       return num >= 5
     }
-    checkV(i: number, j: number, type: ChessType): boolean {
+    checkV(i: number, j: number, chessType: ChessType): boolean {
       let num = 1
       let temp = i
       while(--temp > 0) {
-        if (this.chessDataArr[temp][j].type === type) {
+        if (this.chessDataArr[temp][j].chessType === chessType) {
           num++
         } else {
           break
@@ -157,7 +180,7 @@ export default class Home extends cc.Component {
       }
       temp = i
       while(++temp < Config.ROW_COUNT) {
-        if (this.chessDataArr[temp][j].type === type) {
+        if (this.chessDataArr[temp][j].chessType === chessType) {
           num++
         } else {
           break
@@ -165,12 +188,12 @@ export default class Home extends cc.Component {
       }
       return num >= 5
     }
-    checkO1(i: number, j: number, type: ChessType): boolean {
+    checkO1(i: number, j: number, chessType: ChessType): boolean {
       let num = 1
       let tempI = i
       let tempJ = j
       while(tempI--, tempJ--, tempI >= 0 && tempJ >= 0) {
-        if (this.chessDataArr[tempI][tempJ].type === type) {
+        if (this.chessDataArr[tempI][tempJ].chessType === chessType) {
           num++
         } else {
           break
@@ -179,7 +202,7 @@ export default class Home extends cc.Component {
       tempI = i
       tempJ = j
       while(tempI++, tempJ++, tempI < Config.ROW_COUNT && tempJ < Config.ROW_COUNT) {
-        if (this.chessDataArr[tempI][tempJ].type === type) {
+        if (this.chessDataArr[tempI][tempJ].chessType === chessType) {
           num++
         } else {
           break
@@ -187,12 +210,12 @@ export default class Home extends cc.Component {
       }
       return num >= 5
     }
-    checkO2(i: number, j: number, type: ChessType): boolean {
+    checkO2(i: number, j: number, chessType: ChessType): boolean {
       let num = 1
       let tempI = i
       let tempJ = j
       while(tempI--, tempJ++, tempI >= 0 && tempJ < Config.COL_COUNT) {
-        if (this.chessDataArr[tempI][tempJ].type === type) {
+        if (this.chessDataArr[tempI][tempJ].chessType === chessType) {
           num++
         } else {
           break
@@ -201,7 +224,7 @@ export default class Home extends cc.Component {
       tempI = i
       tempJ = j
       while(tempI++, tempJ--, tempI < Config.ROW_COUNT && tempJ >= 0) {
-        if (this.chessDataArr[tempI][tempJ].type === type) {
+        if (this.chessDataArr[tempI][tempJ].chessType === chessType) {
           num++
         } else {
           break
@@ -211,6 +234,6 @@ export default class Home extends cc.Component {
     }
 
     updateRoundTip() {
-      this.tip.string = `轮到 ${this.curPlayer === this.p1 ? this.p1.name : this.p2.name} 落子啦`
+      this.tip.string = `轮到 ${this.curPlayer.uid === this.p1.uid ? this.p1.name : this.p2.name} 落子啦`
     }
 }

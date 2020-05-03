@@ -44,6 +44,11 @@ export default class Login extends cc.Component {
         this.tip.string = '登入成功'
         this.uid = msg.uid
         this.matchNode.active = true
+        if (msg.sync) { // 说明还有在进行中的棋盘
+          cc.director.loadScene('Home', () => {
+            EventCenter.emit(EventName.EVENT_CONTINUE_GAME, msg)
+          })
+        }
       } else if (code === -1) {
         this.tip.string = '用户名或密码有误'
       } else {

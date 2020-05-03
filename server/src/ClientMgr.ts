@@ -1,5 +1,6 @@
 import Client from "./Client"
 import { MessageType, MessageS2C_Match } from "./Message"
+import GameMgr from "./GameMgr"
 
 export default class ClientMgr {
   private static _instance: ClientMgr
@@ -11,30 +12,23 @@ export default class ClientMgr {
   }
 
   addClient(client: Client) {
-    this.allClientArr.push(client)
+    let idx = this.allClientArr.findIndex(c => c.uid === client.uid)
+    if (idx < 0) this.allClientArr.push(client)
+  }
+
+  removeClient(client: Client) {
+    let idx = this.allClientArr.indexOf(client)
+    if (idx >= 0) this.allClientArr.splice(idx, 1)
+
+    idx = this.matchingClientArr.indexOf(client)
+    if (idx >= 0) this.matchingClientArr.splice(idx, 1)
   }
 
   match(client: Client) {
     if (this.matchingClientArr.length) {
       // 相互匹配
       let rival = this.matchingClientArr.shift()
-      client.matchClient = rival
-      rival.matchClient = client
-
-      let msg1 = new MessageS2C_Match()
-      msg1.type = MessageType.S2C_Match
-      msg1.myUid = client.uid
-      msg1.otherUid = rival.uid
-      msg1.myChessType = Math.random() > 0.5 ? 1 : 2
-
-      let msg2 = new MessageS2C_Match()
-      msg2.type = MessageType.S2C_Match
-      msg2.myUid = rival.uid
-      msg2.otherUid = client.uid
-      msg2.myChessType = msg1.myChessType === 1 ? 2 : 1
-
-      client.send(msg1)
-      rival.send(msg2)
+      GameMgr.getInstance(GameMgr).addGame(client, rival)
     } else {
       console.log('当前暂无可匹配的客户端')
       this.matchingClientArr.push(client)

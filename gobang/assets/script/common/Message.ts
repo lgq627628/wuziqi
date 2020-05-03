@@ -1,3 +1,5 @@
+import { ChessType, ChessData } from "../Chess";
+
 export default class Message {
   type: MessageType
 }
@@ -21,16 +23,18 @@ export enum MessageType {
 }
 
 export class PutMessage extends Message {
-  uid: number
+  type: MessageType = MessageType.C2S_Put
+  uid: string
   i: number
   j: number
-  type: MessageType = MessageType.C2S_Put
+  chessType: ChessType
 
-  constructor(uid: number,i: number, j: number) {
+  constructor(uid: string,i: number, j: number, chessType: ChessType) {
     super()
     this.uid = uid
     this.i = i
     this.j = j
+    this.chessType = chessType
   }
 }
 
@@ -55,6 +59,7 @@ export class MessageC2S_Login extends MessageC2S {
 export class MessageS2C_Login extends MessageS2C {
   type: MessageType = MessageType.S2C_Login
   uid: string
+  sync: MsgSync
 }
 
 export class MessageC2S_Match extends MessageC2S {
@@ -64,6 +69,20 @@ export class MessageC2S_Match extends MessageC2S {
 
 export class MessageS2C_Match extends MessageS2C {
   type: MessageType = MessageType.S2C_Match
+  myUid: string
+  otherUid: string
+  myChessType: number
+}
+
+export class MsgSync {
+  myUid: string
+  otherUid: string
+  myChessType: number
+  panelData: ChessData[][] = []
+}
+
+
+export interface ISyncData {
   myUid: string
   otherUid: string
   myChessType: number

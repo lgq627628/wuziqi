@@ -1,7 +1,7 @@
 import { ChessType } from "./Chess";
 
 export default class Player {
-  uid: number
+  uid: string
   name: string
-  type: ChessType
+  chessType: ChessType
 }
