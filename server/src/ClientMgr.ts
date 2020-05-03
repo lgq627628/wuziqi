@@ -1,5 +1,5 @@
 import Client from "./Client"
-import { MatchMessage, MessageType } from "./Message"
+import { MessageType, MessageS2C_Match } from "./Message"
 
 export default class ClientMgr {
   private static _instance: ClientMgr
@@ -21,19 +21,16 @@ export default class ClientMgr {
       client.matchClient = rival
       rival.matchClient = client
 
-      let uid1 = 1000
-      let uid2 = 2000
-
-      let msg1 = new MatchMessage()
-      msg1.type = MessageType.S2C_MatchOK
-      msg1.myUid = uid1
-      msg1.otherUid = uid2
+      let msg1 = new MessageS2C_Match()
+      msg1.type = MessageType.S2C_Match
+      msg1.myUid = client.uid
+      msg1.otherUid = rival.uid
       msg1.myChessType = Math.random() > 0.5 ? 1 : 2
 
-      let msg2 = new MatchMessage()
-      msg2.type = MessageType.S2C_MatchOK
-      msg2.myUid = uid2
-      msg2.otherUid = uid1
+      let msg2 = new MessageS2C_Match()
+      msg2.type = MessageType.S2C_Match
+      msg2.myUid = rival.uid
+      msg2.otherUid = client.uid
       msg2.myChessType = msg1.myChessType === 1 ? 2 : 1
 
       client.send(msg1)

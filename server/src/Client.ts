@@ -25,7 +25,7 @@ export default class Client {
         this.send(msg)
         this.matchClient.send(msg)
         break;
-      case MessageType.Match:
+      case MessageType.C2S_Match:
         console.log('收到了客户端的--匹配--请求')
         ClientMgr.getInstance().match(this)
         break;

@@ -15,6 +15,7 @@ export default class WS extends cc.Component {
 
     onLoad () {
       WS._instance = this
+      cc.game.addPersistRootNode(this.node)
     }
 
     connect() {
@@ -31,8 +32,8 @@ export default class WS extends cc.Component {
         let msg = JSON.parse(e.data) as Message
 
         switch (msg.type) {
-          case MessageType.S2C_MatchOK:
-            EventCenter.emit(EventName.EVENT_MATCH_OK, msg)
+          case MessageType.S2C_Match:
+            EventCenter.emit(msg.type.toString(), msg)
             break
           case MessageType.S2C_Put:
             EventCenter.emit(EventName.EVENT_PUT, msg)
