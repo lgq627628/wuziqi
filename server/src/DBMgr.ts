@@ -3,7 +3,9 @@ import { MongoClient, MongoError, Db, Collection } from "mongodb";
 
 export default class DBMgr extends Single<DBMgr> {
 
+  /** 库名 */
   db: Db
+  /** user 集合（表） */
   userCollection: Collection
 
   connectDB() {
@@ -16,14 +18,6 @@ export default class DBMgr extends Single<DBMgr> {
       console.log('连接数据库成功')
       this.db = rs.db('wuziqi')
       this.userCollection = this.db.collection('user')
-      // wuziqi.collection('user').find().toArray((e: MongoError, rowData) => {
-      //   if (e) {
-      //     console.log('查找用户集合出错', e)
-      //     return
-      //   }
-      //   console.log('用户集合查找结果如下：\n', rowData)
-      //   rs.close() // 如果没有其他操作记得关闭
-      // })
     })
   }
 

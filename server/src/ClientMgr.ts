@@ -1,5 +1,4 @@
 import Client from "./Client"
-import { MessageType, MessageS2C_Match } from "./Message"
 import GameMgr from "./GameMgr"
 
 export default class ClientMgr {

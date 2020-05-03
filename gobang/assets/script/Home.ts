@@ -4,7 +4,7 @@ import Player from "./Player";
 import EventCenter from "./common/EventCenter";
 import EventName from "./common/EventName";
 import WS from "./common/WS";
-import { PutMessage, MessageS2C_Match, MessageS2C_Login, ISyncData } from "./common/Message";
+import { PutMessage, MessageS2C_Login, ISyncData } from "./common/Message";
 
 const {ccclass, property} = cc._decorator;
 
